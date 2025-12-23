@@ -11,10 +11,16 @@ export default function HomePage() {
     const [prompts, setPrompts] = useState<Prompt[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const loadPrompts = () => {
-        const data = getPrompts();
-        setPrompts(data);
-        setIsLoading(false);
+    const loadPrompts = async () => {
+        setIsLoading(true);
+        try {
+            const data = await getPrompts();
+            setPrompts(data);
+        } catch (error) {
+            console.error("Error loading prompts:", error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     useEffect(() => {

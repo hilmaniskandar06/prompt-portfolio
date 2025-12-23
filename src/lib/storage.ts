@@ -1,90 +1,107 @@
+import {
+    collection,
+    doc,
+    getDocs,
+    getDoc,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    orderBy,
+    query,
+    Timestamp
+} from "firebase/firestore";
+import { db } from "./firebase";
 import { Prompt, NewPromptData } from "./types";
-import { generateId } from "./utils";
 
-const STORAGE_KEY = "prompt-portfolio-data";
+const COLLECTION_NAME = "prompts";
 
-// Data contoh awal
-const initialData: Prompt[] = [
-    {
-        id: "1",
-        promptText: "A majestic fantasy mountain landscape at sunset, with floating islands, waterfalls cascading into clouds, ethereal lighting, vibrant colors, highly detailed, 8k resolution, digital art style",
-        imageBefore: "",
-        imageAfter: "",
-        createdAt: new Date().toISOString(),
-    },
-    {
-        id: "2",
-        promptText: "Cyberpunk portrait of a young woman with neon lights reflecting on her face, futuristic city background, rain, holographic elements, cinematic lighting, ultra realistic, 4k",
-        imageBefore: "",
-        imageAfter: "",
-        createdAt: new Date().toISOString(),
-    },
-];
-
-// Inisialisasi storage dengan data contoh jika kosong
-function initializeStorage(): void {
-    if (typeof window === "undefined") return;
-
-    const existing = localStorage.getItem(STORAGE_KEY);
-    if (!existing) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
-    }
+// Konversi Firestore doc ke Prompt
+function docToPrompt(docSnapshot: any): Prompt {
+    const data = docSnapshot.data();
+    return {
+        id: docSnapshot.id,
+        promptText: data.promptText || "",
+        imageBefore: data.imageBefore || "",
+        imageAfter: data.imageAfter || "",
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+    };
 }
 
 // Ambil semua prompt
-export function getPrompts(): Prompt[] {
-    if (typeof window === "undefined") return [];
-
-    initializeStorage();
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+export async function getPrompts(): Promise<Prompt[]> {
+    try {
+        const promptsRef = collection(db, COLLECTION_NAME);
+        const q = query(promptsRef, orderBy("createdAt", "desc"));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(docToPrompt);
+    } catch (error) {
+        console.error("Error getting prompts:", error);
+        return [];
+    }
 }
 
 // Ambil satu prompt berdasarkan ID
-export function getPromptById(id: string): Prompt | undefined {
-    const prompts = getPrompts();
-    return prompts.find((p) => p.id === id);
+export async function getPromptById(id: string): Promise<Prompt | null> {
+    try {
+        const docRef = doc(db, COLLECTION_NAME, id);
+        const docSnapshot = await getDoc(docRef);
+
+        if (!docSnapshot.exists()) {
+            return null;
+        }
+
+        return docToPrompt(docSnapshot);
+    } catch (error) {
+        console.error("Error getting prompt:", error);
+        return null;
+    }
 }
 
 // Tambah prompt baru
-export function addPrompt(data: NewPromptData): Prompt {
-    const prompts = getPrompts();
+export async function addPrompt(data: NewPromptData): Promise<Prompt | null> {
+    try {
+        const promptsRef = collection(db, COLLECTION_NAME);
 
-    const newPrompt: Prompt = {
-        ...data,
-        id: generateId(),
-        createdAt: new Date().toISOString(),
-    };
+        const newPromptDoc = {
+            promptText: data.promptText,
+            imageBefore: data.imageBefore,
+            imageAfter: data.imageAfter,
+            createdAt: Timestamp.now(),
+        };
 
-    prompts.unshift(newPrompt); // Tambah di awal array
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(prompts));
+        const docRef = await addDoc(promptsRef, newPromptDoc);
 
-    return newPrompt;
+        return {
+            id: docRef.id,
+            ...data,
+            createdAt: new Date().toISOString(),
+        };
+    } catch (error) {
+        console.error("Error adding prompt:", error);
+        return null;
+    }
 }
 
 // Update prompt
-export function updatePrompt(id: string, data: Partial<NewPromptData>): Prompt | undefined {
-    const prompts = getPrompts();
-    const index = prompts.findIndex((p) => p.id === id);
-
-    if (index === -1) return undefined;
-
-    prompts[index] = {
-        ...prompts[index],
-        ...data,
-    };
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(prompts));
-    return prompts[index];
+export async function updatePrompt(id: string, data: Partial<NewPromptData>): Promise<boolean> {
+    try {
+        const docRef = doc(db, COLLECTION_NAME, id);
+        await updateDoc(docRef, data);
+        return true;
+    } catch (error) {
+        console.error("Error updating prompt:", error);
+        return false;
+    }
 }
 
 // Hapus prompt
-export function deletePrompt(id: string): boolean {
-    const prompts = getPrompts();
-    const filtered = prompts.filter((p) => p.id !== id);
-
-    if (filtered.length === prompts.length) return false;
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-    return true;
+export async function deletePrompt(id: string): Promise<boolean> {
+    try {
+        const docRef = doc(db, COLLECTION_NAME, id);
+        await deleteDoc(docRef);
+        return true;
+    } catch (error) {
+        console.error("Error deleting prompt:", error);
+        return false;
+    }
 }

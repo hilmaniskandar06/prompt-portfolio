@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Upload, X, Clipboard } from "lucide-react";
 import { NewPromptData } from "@/lib/types";
-import { fileToBase64 } from "@/lib/utils";
+import { compressImage } from "@/lib/utils";
 import { addPrompt } from "@/lib/storage";
 
 interface ImageDropZoneProps {
@@ -14,22 +14,11 @@ interface ImageDropZoneProps {
     inputRef: React.RefObject<HTMLInputElement>;
     label: string;
     height?: string;
+    isCompressing?: boolean;
 }
 
-function ImageDropZone({ image, setImage, inputRef, label, height = "h-40" }: ImageDropZoneProps) {
+function ImageDropZone({ image, setImage, inputRef, label, height = "h-40", isCompressing }: ImageDropZoneProps) {
     const [isDragging, setIsDragging] = useState(false);
-
-    const handleFile = async (file: File) => {
-        if (!file.type.startsWith("image/")) {
-            return;
-        }
-        try {
-            const base64 = await fileToBase64(file);
-            setImage(base64);
-        } catch (error) {
-            console.error("Error processing image:", error);
-        }
-    };
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -47,32 +36,16 @@ function ImageDropZone({ image, setImage, inputRef, label, height = "h-40" }: Im
         e.preventDefault();
         e.stopPropagation();
         setIsDragging(false);
-
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            await handleFile(files[0]);
-        }
     };
 
-    const handlePaste = async (e: React.ClipboardEvent) => {
-        const items = e.clipboardData.items;
-        for (let i = 0; i < items.length; i++) {
-            if (items[i].type.startsWith("image/")) {
-                const file = items[i].getAsFile();
-                if (file) {
-                    await handleFile(file);
-                    break;
-                }
-            }
-        }
-    };
-
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            await handleFile(file);
-        }
-    };
+    if (isCompressing) {
+        return (
+            <div className={`w-full ${height} border-2 border-dashed border-[var(--border)] rounded-xl flex flex-col items-center justify-center gap-2`}>
+                <div className="w-8 h-8 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-sm text-[var(--muted)]">Mengompres gambar...</span>
+            </div>
+        );
+    }
 
     if (image) {
         return (
@@ -99,27 +72,19 @@ function ImageDropZone({ image, setImage, inputRef, label, height = "h-40" }: Im
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            onPaste={handlePaste}
             tabIndex={0}
             className={`w-full ${height} border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--primary)] ${isDragging
-                ? "border-[var(--primary)] bg-[var(--accent)]"
-                : "border-[var(--border)] hover:border-[var(--primary)] hover:bg-[var(--accent)]"
+                    ? "border-[var(--primary)] bg-[var(--accent)]"
+                    : "border-[var(--border)] hover:border-[var(--primary)] hover:bg-[var(--accent)]"
                 }`}
         >
-            <input
-                ref={inputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-            />
             <Upload className={`w-8 h-8 ${isDragging ? "text-[var(--primary)]" : "text-[var(--muted)]"}`} />
             <span className="text-sm text-[var(--muted)] text-center px-4">
-                Klik, seret gambar ke sini, atau paste
+                Klik atau seret gambar ke sini
             </span>
             <div className="flex items-center gap-1 text-xs text-[var(--muted)]">
                 <Clipboard className="w-3 h-3" />
-                <span>Ctrl+V untuk paste dari clipboard</span>
+                <span>Max 5MB, akan dikompres otomatis</span>
             </div>
         </div>
     );
@@ -131,6 +96,8 @@ export default function TambahPromptPage() {
     const [promptText, setPromptText] = useState("");
     const [imageBefore, setImageBefore] = useState<string>("");
     const [imageAfter, setImageAfter] = useState<string>("");
+    const [isCompressingBefore, setIsCompressingBefore] = useState(false);
+    const [isCompressingAfter, setIsCompressingAfter] = useState(false);
 
     const beforeInputRef = useRef<HTMLInputElement>(null);
     const afterInputRef = useRef<HTMLInputElement>(null);
@@ -150,6 +117,33 @@ export default function TambahPromptPage() {
         }, 2000);
     };
 
+    const handleImageUpload = async (
+        file: File,
+        setImage: (value: string) => void,
+        setCompressing: (value: boolean) => void
+    ) => {
+        if (!file.type.startsWith("image/")) {
+            showToast("File harus berupa gambar");
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            showToast("Ukuran gambar maksimal 5MB");
+            return;
+        }
+
+        setCompressing(true);
+        try {
+            const compressed = await compressImage(file, 400);
+            setImage(compressed);
+        } catch (error) {
+            console.error("Error compressing image:", error);
+            showToast("Gagal memproses gambar");
+        } finally {
+            setCompressing(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -167,9 +161,14 @@ export default function TambahPromptPage() {
                 imageAfter,
             };
 
-            addPrompt(newPromptData);
-            showToast("Prompt berhasil ditambahkan!");
-            router.push("/");
+            const result = await addPrompt(newPromptData);
+
+            if (result) {
+                showToast("Prompt berhasil ditambahkan!");
+                router.push("/");
+            } else {
+                showToast("Gagal menambahkan prompt");
+            }
         } catch (error) {
             console.error("Error adding prompt:", error);
             showToast("Gagal menambahkan prompt");
@@ -225,22 +224,44 @@ export default function TambahPromptPage() {
                             {/* Before Image */}
                             <div className="space-y-2">
                                 <span className="text-sm text-[var(--muted)]">Gambar Sebelum</span>
+                                <input
+                                    ref={beforeInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) handleImageUpload(file, setImageBefore, setIsCompressingBefore);
+                                    }}
+                                    className="hidden"
+                                />
                                 <ImageDropZone
                                     image={imageBefore}
                                     setImage={setImageBefore}
                                     inputRef={beforeInputRef as React.RefObject<HTMLInputElement>}
                                     label="Preview sebelum"
+                                    isCompressing={isCompressingBefore}
                                 />
                             </div>
 
                             {/* After Image */}
                             <div className="space-y-2">
                                 <span className="text-sm text-[var(--muted)]">Gambar Sesudah</span>
+                                <input
+                                    ref={afterInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) handleImageUpload(file, setImageAfter, setIsCompressingAfter);
+                                    }}
+                                    className="hidden"
+                                />
                                 <ImageDropZone
                                     image={imageAfter}
                                     setImage={setImageAfter}
                                     inputRef={afterInputRef as React.RefObject<HTMLInputElement>}
                                     label="Preview sesudah"
+                                    isCompressing={isCompressingAfter}
                                 />
                             </div>
                         </div>
@@ -253,7 +274,7 @@ export default function TambahPromptPage() {
                         </Link>
                         <button
                             type="submit"
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || isCompressingBefore || isCompressingAfter}
                             className="btn btn-primary"
                         >
                             {isSubmitting ? "Menyimpan..." : "Simpan Prompt"}

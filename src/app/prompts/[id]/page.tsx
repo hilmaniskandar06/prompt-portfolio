@@ -12,15 +12,26 @@ export default function PromptDetailPage() {
     const params = useParams();
     const router = useRouter();
     const [prompt, setPrompt] = useState<Prompt | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
     const [copied, setCopied] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     useEffect(() => {
-        if (params.id) {
-            const data = getPromptById(params.id as string);
-            setPrompt(data || null);
-        }
+        const loadPrompt = async () => {
+            if (params.id) {
+                setIsLoading(true);
+                try {
+                    const data = await getPromptById(params.id as string);
+                    setPrompt(data);
+                } catch (error) {
+                    console.error("Error loading prompt:", error);
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+        };
+        loadPrompt();
     }, [params.id]);
 
     const showToast = (message: string) => {
@@ -53,7 +64,7 @@ export default function PromptDetailPage() {
         if (!prompt) return;
 
         setIsDeleting(true);
-        const success = deletePrompt(prompt.id);
+        const success = await deletePrompt(prompt.id);
 
         if (success) {
             showToast("Prompt berhasil dihapus!");
@@ -63,6 +74,14 @@ export default function PromptDetailPage() {
             setIsDeleting(false);
         }
     };
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        );
+    }
 
     if (!prompt) {
         return (
@@ -202,7 +221,7 @@ export default function PromptDetailPage() {
             {/* Delete Confirmation Modal */}
             {showDeleteConfirm && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                    <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
+                    <div className="bg-[var(--card)] rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
                         <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">
                             Hapus Prompt?
                         </h3>

@@ -7,6 +7,7 @@ import { ArrowLeft, Copy, Check, Trash2, ImageIcon, Calendar } from "lucide-reac
 import { getPromptById, deletePrompt } from "@/lib/storage";
 import { copyToClipboard, formatDate } from "@/lib/utils";
 import { Prompt } from "@/lib/types";
+import { ImageCompareSlider } from "@/components/image-compare-slider";
 
 export default function PromptDetailPage() {
     const params = useParams();
@@ -148,46 +149,58 @@ export default function PromptDetailPage() {
                     </div>
                 </div>
 
-                {/* Image Comparison */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    {/* Before Image */}
-                    <div className="space-y-2">
-                        <h3 className="font-medium text-[var(--foreground)]">Gambar Sebelum</h3>
-                        <div className="aspect-video rounded-xl overflow-hidden border border-[var(--border)]">
-                            {prompt.imageBefore ? (
-                                <img
-                                    src={prompt.imageBefore}
-                                    alt="Gambar sebelum"
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--secondary)] text-[var(--muted)]">
-                                    <ImageIcon className="w-12 h-12 mb-2" />
-                                    <span>Tidak ada gambar</span>
-                                </div>
-                            )}
-                        </div>
+                {/* Image Comparison Slider */}
+                {prompt.imageBefore && prompt.imageAfter ? (
+                    <div className="mb-8">
+                        <h3 className="font-medium text-[var(--foreground)] mb-3">Perbandingan Gambar</h3>
+                        <p className="text-sm text-[var(--muted)] mb-3">Geser untuk membandingkan sebelum dan sesudah</p>
+                        <ImageCompareSlider
+                            imageBefore={prompt.imageBefore}
+                            imageAfter={prompt.imageAfter}
+                            className="aspect-video rounded-xl border border-[var(--border)]"
+                        />
                     </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        {/* Before Image */}
+                        <div className="space-y-2">
+                            <h3 className="font-medium text-[var(--foreground)]">Gambar Sebelum</h3>
+                            <div className="aspect-video rounded-xl overflow-hidden border border-[var(--border)]">
+                                {prompt.imageBefore ? (
+                                    <img
+                                        src={prompt.imageBefore}
+                                        alt="Gambar sebelum"
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--secondary)] text-[var(--muted)]">
+                                        <ImageIcon className="w-12 h-12 mb-2" />
+                                        <span>Tidak ada gambar</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
-                    {/* After Image */}
-                    <div className="space-y-2">
-                        <h3 className="font-medium text-[var(--foreground)]">Gambar Sesudah</h3>
-                        <div className="aspect-video rounded-xl overflow-hidden border border-[var(--border)]">
-                            {prompt.imageAfter ? (
-                                <img
-                                    src={prompt.imageAfter}
-                                    alt="Gambar sesudah"
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--secondary)] text-[var(--muted)]">
-                                    <ImageIcon className="w-12 h-12 mb-2" />
-                                    <span>Tidak ada gambar</span>
-                                </div>
-                            )}
+                        {/* After Image */}
+                        <div className="space-y-2">
+                            <h3 className="font-medium text-[var(--foreground)]">Gambar Sesudah</h3>
+                            <div className="aspect-video rounded-xl overflow-hidden border border-[var(--border)]">
+                                {prompt.imageAfter ? (
+                                    <img
+                                        src={prompt.imageAfter}
+                                        alt="Gambar sesudah"
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--secondary)] text-[var(--muted)]">
+                                        <ImageIcon className="w-12 h-12 mb-2" />
+                                        <span>Tidak ada gambar</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
 
                 {/* Prompt Text */}
                 <div className="space-y-2">

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Copy, Check, ImageIcon } from "lucide-react";
 import { Prompt } from "@/lib/types";
 import { copyToClipboard, truncateText } from "@/lib/utils";
+import { ImageModal } from "./image-modal";
 
 interface PromptCardProps {
     prompt: Prompt;
@@ -12,6 +13,13 @@ interface PromptCardProps {
 
 export function PromptCard({ prompt }: PromptCardProps) {
     const [copied, setCopied] = useState(false);
+    const [selectedImage, setSelectedImage] = useState<{ src: string, alt: string } | null>(null);
+
+    const handleImageClick = (e: React.MouseEvent, src: string, alt: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setSelectedImage({ src, alt });
+    };
 
     const handleCopy = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -50,7 +58,8 @@ export function PromptCard({ prompt }: PromptCardProps) {
                             <img
                                 src={prompt.imageBefore}
                                 alt="Gambar sebelum"
-                                className="w-full h-28 object-cover"
+                                className="w-full h-28 object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
+                                onClick={(e) => handleImageClick(e, prompt.imageBefore, "Gambar Sebelum")}
                             />
                         ) : (
                             <div className="placeholder-image h-28">
@@ -69,7 +78,8 @@ export function PromptCard({ prompt }: PromptCardProps) {
                             <img
                                 src={prompt.imageAfter}
                                 alt="Gambar sesudah"
-                                className="w-full h-28 object-cover"
+                                className="w-full h-28 object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
+                                onClick={(e) => handleImageClick(e, prompt.imageAfter, "Gambar Sesudah")}
                             />
                         ) : (
                             <div className="placeholder-image h-28">
@@ -105,6 +115,14 @@ export function PromptCard({ prompt }: PromptCardProps) {
                     </div>
                 </div>
             </article>
+
+            {selectedImage && (
+                <ImageModal
+                    src={selectedImage.src}
+                    alt={selectedImage.alt}
+                    onClose={() => setSelectedImage(null)}
+                />
+            )}
         </Link>
     );
 }

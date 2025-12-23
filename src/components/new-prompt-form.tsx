@@ -1,95 +1,14 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, X, Plus, Clipboard } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import { NewPromptData } from "@/lib/types";
 import { compressImage } from "@/lib/utils";
 import { addPrompt } from "@/lib/storage";
+import { ImageDropZone } from "./image-drop-zone";
 
 interface NewPromptFormProps {
     onSuccess?: () => void;
-}
-
-interface ImageDropZoneProps {
-    image: string;
-    setImage: (value: string) => void;
-    inputRef: React.RefObject<HTMLInputElement>;
-    label: string;
-    isCompressing?: boolean;
-}
-
-function ImageDropZone({ image, setImage, inputRef, label, isCompressing }: ImageDropZoneProps) {
-    const [isDragging, setIsDragging] = useState(false);
-
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(true);
-    };
-
-    const handleDragLeave = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-    };
-
-    const handleDrop = async (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-        // File handling is done in parent
-    };
-
-    if (isCompressing) {
-        return (
-            <div className="w-full h-32 border-2 border-dashed border-[var(--border)] rounded-lg flex flex-col items-center justify-center gap-2">
-                <div className="w-6 h-6 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-xs text-[var(--muted)]">Mengompres gambar...</span>
-            </div>
-        );
-    }
-
-    if (image) {
-        return (
-            <div className="relative rounded-lg overflow-hidden">
-                <img
-                    src={image}
-                    alt={label}
-                    className="w-full h-32 object-cover"
-                />
-                <button
-                    type="button"
-                    onClick={() => setImage("")}
-                    className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors"
-                >
-                    <X className="w-4 h-4" />
-                </button>
-            </div>
-        );
-    }
-
-    return (
-        <div
-            onClick={() => inputRef.current?.click()}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            tabIndex={0}
-            className={`w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--primary)] ${isDragging
-                    ? "border-[var(--primary)] bg-[var(--accent)]"
-                    : "border-[var(--border)] hover:border-[var(--primary)] hover:bg-[var(--accent)]"
-                }`}
-        >
-            <Upload className={`w-5 h-5 ${isDragging ? "text-[var(--primary)]" : "text-[var(--muted)]"}`} />
-            <span className="text-xs text-[var(--muted)] text-center px-2">
-                Klik atau seret gambar
-            </span>
-            <div className="flex items-center gap-1 text-[10px] text-[var(--muted)]">
-                <Clipboard className="w-3 h-3" />
-                <span>Max 5MB</span>
-            </div>
-        </div>
-    );
 }
 
 export function NewPromptForm({ onSuccess }: NewPromptFormProps) {
@@ -250,7 +169,8 @@ export function NewPromptForm({ onSuccess }: NewPromptFormProps) {
                         <ImageDropZone
                             image={imageBefore}
                             setImage={setImageBefore}
-                            inputRef={beforeInputRef as React.RefObject<HTMLInputElement>}
+                            onFileSelect={(file) => handleImageUpload(file, setImageBefore, setIsCompressingBefore)}
+                            inputRef={beforeInputRef}
                             label="Preview sebelum"
                             isCompressing={isCompressingBefore}
                         />
@@ -274,7 +194,8 @@ export function NewPromptForm({ onSuccess }: NewPromptFormProps) {
                         <ImageDropZone
                             image={imageAfter}
                             setImage={setImageAfter}
-                            inputRef={afterInputRef as React.RefObject<HTMLInputElement>}
+                            onFileSelect={(file) => handleImageUpload(file, setImageAfter, setIsCompressingAfter)}
+                            inputRef={afterInputRef}
                             label="Preview sesudah"
                             isCompressing={isCompressingAfter}
                         />

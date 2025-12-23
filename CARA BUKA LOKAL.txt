@@ -1,3 +1,5 @@
+INSTAL NODE.JS
+
 KLIK KANAN BUKA DENGAN CMD KETIK INI :
 npm install
 npm run dev

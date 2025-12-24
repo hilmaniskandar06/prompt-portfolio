@@ -58,11 +58,11 @@ export function PromptCard({ prompt }: PromptCardProps) {
                             <img
                                 src={prompt.imageBefore}
                                 alt="Gambar sebelum"
-                                className="w-full h-28 object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
+                                className="w-full aspect-[4/5] object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
                                 onClick={(e) => handleImageClick(e, prompt.imageBefore, "Gambar Sebelum")}
                             />
                         ) : (
-                            <div className="placeholder-image h-28">
+                            <div className="placeholder-image aspect-[4/5]">
                                 <div className="flex flex-col items-center gap-1">
                                     <ImageIcon className="w-6 h-6" />
                                     <span>Sebelum</span>
@@ -78,11 +78,11 @@ export function PromptCard({ prompt }: PromptCardProps) {
                             <img
                                 src={prompt.imageAfter}
                                 alt="Gambar sesudah"
-                                className="w-full h-28 object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
+                                className="w-full aspect-[4/5] object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
                                 onClick={(e) => handleImageClick(e, prompt.imageAfter, "Gambar Sesudah")}
                             />
                         ) : (
-                            <div className="placeholder-image h-28">
+                            <div className="placeholder-image aspect-[4/5]">
                                 <div className="flex flex-col items-center gap-1">
                                     <ImageIcon className="w-6 h-6" />
                                     <span>Sesudah</span>

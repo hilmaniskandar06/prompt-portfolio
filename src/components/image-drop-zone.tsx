@@ -19,7 +19,7 @@ export function ImageDropZone({
     onFileSelect,
     inputRef,
     label,
-    height = "h-32",
+    height = "aspect-[4/5]",
     isCompressing
 }: ImageDropZoneProps) {
     const [isDragging, setIsDragging] = useState(false);
@@ -94,8 +94,8 @@ export function ImageDropZone({
             onPaste={handlePaste}
             tabIndex={0}
             className={`w-full ${height} border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer transition-all outline-none focus:ring-2 focus:ring-[var(--primary)] ${isDragging
-                    ? "border-[var(--primary)] bg-[var(--accent)] scale-[0.99]"
-                    : "border-[var(--border)] hover:border-[var(--primary)] hover:bg-[var(--accent)]"
+                ? "border-[var(--primary)] bg-[var(--accent)] scale-[0.99]"
+                : "border-[var(--border)] hover:border-[var(--primary)] hover:bg-[var(--accent)]"
                 }`}
         >
             <Upload className={`w-6 h-6 mb-1 ${isDragging ? "text-[var(--primary)]" : "text-[var(--muted)]"}`} />

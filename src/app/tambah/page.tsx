@@ -159,7 +159,6 @@ export default function TambahPromptPage() {
                                     onFileSelect={(file) => handleImageUpload(file, setImageBefore, setIsCompressingBefore)}
                                     inputRef={beforeInputRef}
                                     label="Preview sebelum"
-                                    height="h-44"
                                     isCompressing={isCompressingBefore}
                                 />
                             </div>
@@ -183,7 +182,6 @@ export default function TambahPromptPage() {
                                     onFileSelect={(file) => handleImageUpload(file, setImageAfter, setIsCompressingAfter)}
                                     inputRef={afterInputRef}
                                     label="Preview sesudah"
-                                    height="h-44"
                                     isCompressing={isCompressingAfter}
                                 />
                             </div>

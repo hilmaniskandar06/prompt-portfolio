@@ -155,7 +155,7 @@ export default function PromptDetailPage() {
                     {/* Before Image */}
                     <div className="space-y-2">
                         <h3 className="font-medium text-[var(--foreground)]">Gambar Sebelum</h3>
-                        <div className="aspect-video rounded-xl overflow-hidden border border-[var(--border)]">
+                        <div className="aspect-[4/5] rounded-xl overflow-hidden border border-[var(--border)]">
                             {prompt.imageBefore ? (
                                 <img
                                     src={prompt.imageBefore}
@@ -175,7 +175,7 @@ export default function PromptDetailPage() {
                     {/* After Image */}
                     <div className="space-y-2">
                         <h3 className="font-medium text-[var(--foreground)]">Gambar Sesudah</h3>
-                        <div className="aspect-video rounded-xl overflow-hidden border border-[var(--border)]">
+                        <div className="aspect-[4/5] rounded-xl overflow-hidden border border-[var(--border)]">
                             {prompt.imageAfter ? (
                                 <img
                                     src={prompt.imageAfter}

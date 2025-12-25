@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/header";
 import { PromptGallery } from "@/components/prompt-gallery";
-import { NewPromptForm } from "@/components/new-prompt-form";
+import { PromptForm } from "@/components/prompt-form";
 import { getPrompts } from "@/lib/storage";
 import { Prompt } from "@/lib/types";
 
@@ -54,7 +54,7 @@ export default function HomePage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        <NewPromptForm onSuccess={handlePromptAdded} />
+                        <PromptForm onSuccess={handlePromptAdded} />
                         <PromptGallery prompts={prompts} />
                     </div>
                 )}

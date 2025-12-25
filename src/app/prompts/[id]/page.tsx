@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Copy, Check, Trash2, ImageIcon, Calendar } from "lucide-react";
+import { ArrowLeft, Copy, Check, Trash2, ImageIcon, Calendar, Pencil } from "lucide-react";
 import { getPromptById, deletePrompt } from "@/lib/storage";
 import { copyToClipboard, formatDate } from "@/lib/utils";
 import { Prompt } from "@/lib/types";
 import { ImageModal } from "@/components/image-modal";
+import { PromptForm } from "@/components/prompt-form";
 
 export default function PromptDetailPage() {
     const params = useParams();
@@ -16,6 +17,7 @@ export default function PromptDetailPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [copied, setCopied] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [selectedImage, setSelectedImage] = useState<{ src: string, alt: string } | null>(null);
 
@@ -77,6 +79,13 @@ export default function PromptDetailPage() {
         }
     };
 
+    const handleEditSuccess = (updatedPrompt?: Prompt) => {
+        if (updatedPrompt) {
+            setPrompt(updatedPrompt);
+        }
+        setIsEditing(false);
+    };
+
     if (isLoading) {
         return (
             <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
@@ -114,112 +123,144 @@ export default function PromptDetailPage() {
                             <span>Kembali</span>
                         </Link>
                         <div className="flex items-center gap-2">
-                            <button
-                                onClick={handleCopy}
-                                className="btn btn-secondary gap-2"
-                            >
-                                {copied ? (
-                                    <>
-                                        <Check className="w-4 h-4 text-green-600" />
-                                        <span>Tersalin!</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Copy className="w-4 h-4" />
-                                        <span>Salin</span>
-                                    </>
-                                )}
-                            </button>
-                            <button
-                                onClick={() => setShowDeleteConfirm(true)}
-                                className="btn btn-ghost text-[var(--destructive)]"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </button>
+                            {!isEditing && (
+                                <>
+                                    <button
+                                        onClick={() => setIsEditing(true)}
+                                        className="btn btn-secondary gap-2"
+                                    >
+                                        <Pencil className="w-4 h-4" />
+                                        <span>Edit</span>
+                                    </button>
+                                    <button
+                                        onClick={handleCopy}
+                                        className="btn btn-secondary gap-2"
+                                    >
+                                        {copied ? (
+                                            <>
+                                                <Check className="w-4 h-4 text-green-600" />
+                                                <span>Tersalin!</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Copy className="w-4 h-4" />
+                                                <span>Salin</span>
+                                            </>
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={() => setShowDeleteConfirm(true)}
+                                        className="btn btn-ghost text-[var(--destructive)]"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </>
+                            )}
+                            {isEditing && (
+                                <button
+                                    onClick={() => setIsEditing(false)}
+                                    className="btn btn-ghost"
+                                >
+                                    Batal Edit
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
             </header>
 
             <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Date */}
-                <div className="mb-6">
-                    <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
-                        <Calendar className="w-4 h-4" />
-                        {formatDate(prompt.createdAt)}
+                {isEditing ? (
+                    <div className="max-w-3xl mx-auto">
+                        <PromptForm
+                            mode="edit"
+                            initialData={prompt}
+                            onSuccess={handleEditSuccess}
+                            onCancel={() => setIsEditing(false)}
+                        />
                     </div>
-                </div>
-
-                {/* Image Comparison */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    {/* Before Image */}
-                    <div className="space-y-2">
-                        <h3 className="font-medium text-[var(--foreground)]">Gambar Sebelum</h3>
-                        <div className="aspect-[4/5] rounded-xl overflow-hidden border border-[var(--border)]">
-                            {prompt.imageBefore ? (
-                                <img
-                                    src={prompt.imageBefore}
-                                    alt="Gambar sebelum"
-                                    className="w-full h-full object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
-                                    onClick={() => setSelectedImage({ src: prompt.imageBefore, alt: "Gambar Sebelum" })}
-                                />
-                            ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--secondary)] text-[var(--muted)]">
-                                    <ImageIcon className="w-12 h-12 mb-2" />
-                                    <span>Tidak ada gambar</span>
-                                </div>
-                            )}
+                ) : (
+                    <>
+                        {/* Date */}
+                        <div className="mb-6">
+                            <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
+                                <Calendar className="w-4 h-4" />
+                                {formatDate(prompt.createdAt)}
+                            </div>
                         </div>
-                    </div>
 
-                    {/* After Image */}
-                    <div className="space-y-2">
-                        <h3 className="font-medium text-[var(--foreground)]">Gambar Sesudah</h3>
-                        <div className="aspect-[4/5] rounded-xl overflow-hidden border border-[var(--border)]">
-                            {prompt.imageAfter ? (
-                                <img
-                                    src={prompt.imageAfter}
-                                    alt="Gambar sesudah"
-                                    className="w-full h-full object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
-                                    onClick={() => setSelectedImage({ src: prompt.imageAfter, alt: "Gambar Sesudah" })}
-                                />
-                            ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--secondary)] text-[var(--muted)]">
-                                    <ImageIcon className="w-12 h-12 mb-2" />
-                                    <span>Tidak ada gambar</span>
+                        {/* Image Comparison */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            {/* Before Image */}
+                            <div className="space-y-2">
+                                <h3 className="font-medium text-[var(--foreground)]">Gambar Sebelum</h3>
+                                <div className="aspect-[4/5] rounded-xl overflow-hidden border border-[var(--border)]">
+                                    {prompt.imageBefore ? (
+                                        <img
+                                            src={prompt.imageBefore}
+                                            alt="Gambar sebelum"
+                                            className="w-full h-full object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
+                                            onClick={() => setSelectedImage({ src: prompt.imageBefore, alt: "Gambar Sebelum" })}
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--secondary)] text-[var(--muted)]">
+                                            <ImageIcon className="w-12 h-12 mb-2" />
+                                            <span>Tidak ada gambar</span>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
+                            </div>
 
-                {/* Prompt Text */}
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                        <h3 className="font-medium text-[var(--foreground)]">Teks Prompt</h3>
-                        <button
-                            onClick={handleCopy}
-                            className="btn btn-ghost btn-sm gap-1 text-[var(--primary)]"
-                        >
-                            {copied ? (
-                                <>
-                                    <Check className="w-4 h-4" />
-                                    <span>Tersalin!</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Copy className="w-4 h-4" />
-                                    <span>Salin</span>
-                                </>
-                            )}
-                        </button>
-                    </div>
-                    <div className="p-6 bg-[var(--secondary)] rounded-xl">
-                        <p className="text-[var(--foreground)] whitespace-pre-wrap leading-relaxed">
-                            {prompt.promptText}
-                        </p>
-                    </div>
-                </div>
+                            {/* After Image */}
+                            <div className="space-y-2">
+                                <h3 className="font-medium text-[var(--foreground)]">Gambar Sesudah</h3>
+                                <div className="aspect-[4/5] rounded-xl overflow-hidden border border-[var(--border)]">
+                                    {prompt.imageAfter ? (
+                                        <img
+                                            src={prompt.imageAfter}
+                                            alt="Gambar sesudah"
+                                            className="w-full h-full object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
+                                            onClick={() => setSelectedImage({ src: prompt.imageAfter, alt: "Gambar Sesudah" })}
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--secondary)] text-[var(--muted)]">
+                                            <ImageIcon className="w-12 h-12 mb-2" />
+                                            <span>Tidak ada gambar</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Prompt Text */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <h3 className="font-medium text-[var(--foreground)]">Teks Prompt</h3>
+                                <button
+                                    onClick={handleCopy}
+                                    className="btn btn-ghost btn-sm gap-1 text-[var(--primary)]"
+                                >
+                                    {copied ? (
+                                        <>
+                                            <Check className="w-4 h-4" />
+                                            <span>Tersalin!</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Copy className="w-4 h-4" />
+                                            <span>Salin</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                            <div className="p-6 bg-[var(--secondary)] rounded-xl">
+                                <p className="text-[var(--foreground)] whitespace-pre-wrap leading-relaxed">
+                                    {prompt.promptText}
+                                </p>
+                            </div>
+                        </div>
+                    </>
+                )}
             </main>
 
             {/* Delete Confirmation Modal */}
@@ -263,3 +304,4 @@ export default function PromptDetailPage() {
         </div>
     );
 }
+

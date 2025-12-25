@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Copy, Check, ImageIcon } from "lucide-react";
+import { Copy, Check, ImageIcon, Pin } from "lucide-react";
 import { Prompt } from "@/lib/types";
 import { copyToClipboard, truncateText } from "@/lib/utils";
 import { ImageModal } from "./image-modal";
@@ -50,7 +50,14 @@ export function PromptCard({ prompt }: PromptCardProps) {
 
     return (
         <Link href={`/prompts/${prompt.id}`}>
-            <article className="card transition-card hover-lift cursor-pointer group">
+            <article className={`card transition-card hover-lift cursor-pointer group relative ${prompt.isPinned ? 'border-[var(--primary)] ring-1 ring-[var(--primary)]/20' : ''}`}>
+                {/* Pin Indicator */}
+                {prompt.isPinned && (
+                    <div className="absolute -top-2 -right-2 z-10 bg-[var(--primary)] text-white p-1.5 rounded-full shadow-lg">
+                        <Pin className="w-3.5 h-3.5 fill-current" />
+                    </div>
+                )}
+
                 {/* Image Comparison */}
                 <div className="image-comparison p-3 pb-0">
                     <div className="relative rounded-lg overflow-hidden">

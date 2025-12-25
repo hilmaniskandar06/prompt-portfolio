@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { X, Plus, Save } from "lucide-react";
+import { X, Plus, Save, Pin } from "lucide-react";
 import { NewPromptData, Prompt } from "@/lib/types";
 import { compressImage } from "@/lib/utils";
 import { addPrompt, updatePrompt } from "@/lib/storage";
@@ -20,6 +20,7 @@ export function PromptForm({ onSuccess, onCancel, initialData, mode = "add" }: P
     const [promptText, setPromptText] = useState(initialData?.promptText || "");
     const [imageBefore, setImageBefore] = useState<string>(initialData?.imageBefore || "");
     const [imageAfter, setImageAfter] = useState<string>(initialData?.imageAfter || "");
+    const [isPinned, setIsPinned] = useState<boolean>(initialData?.isPinned || false);
     const [isCompressingBefore, setIsCompressingBefore] = useState(false);
     const [isCompressingAfter, setIsCompressingAfter] = useState(false);
 
@@ -32,6 +33,7 @@ export function PromptForm({ onSuccess, onCancel, initialData, mode = "add" }: P
             setPromptText(initialData.promptText);
             setImageBefore(initialData.imageBefore);
             setImageAfter(initialData.imageAfter);
+            setIsPinned(initialData.isPinned || false);
             setIsOpen(true);
         }
     }, [initialData, mode]);
@@ -93,6 +95,7 @@ export function PromptForm({ onSuccess, onCancel, initialData, mode = "add" }: P
                 promptText: promptText.trim(),
                 imageBefore,
                 imageAfter,
+                isPinned,
             };
 
             if (mode === "edit" && initialData) {
@@ -110,6 +113,7 @@ export function PromptForm({ onSuccess, onCancel, initialData, mode = "add" }: P
                     setPromptText("");
                     setImageBefore("");
                     setImageAfter("");
+                    setIsPinned(false);
                     if (mode !== "edit") setIsOpen(false);
 
                     showToast("Prompt berhasil ditambahkan!");
@@ -233,6 +237,24 @@ export function PromptForm({ onSuccess, onCancel, initialData, mode = "add" }: P
                             isCompressing={isCompressingAfter}
                         />
                     </div>
+                </div>
+
+                {/* Pin Strategy */}
+                <div className="flex items-center gap-2 pt-2 border-t border-[var(--border)]">
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                        <div className="relative flex items-center">
+                            <input
+                                type="checkbox"
+                                checked={isPinned}
+                                onChange={(e) => setIsPinned(e.target.checked)}
+                                className="w-5 h-5 rounded border-[var(--border)] text-[var(--primary)] focus:ring-[var(--primary)] cursor-pointer"
+                            />
+                        </div>
+                        <span className="text-sm font-medium text-[var(--foreground)] group-hover:text-[var(--primary)] transition-colors flex items-center gap-1.5">
+                            <Pin className={`w-3.5 h-3.5 ${isPinned ? 'fill-current text-[var(--primary)]' : 'text-[var(--muted)]'}`} />
+                            Sematkan di atas
+                        </span>
+                    </label>
                 </div>
 
                 {/* Submit Button */}

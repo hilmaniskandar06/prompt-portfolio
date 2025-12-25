@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Copy, Check, Trash2, ImageIcon, Calendar, Pencil } from "lucide-react";
-import { getPromptById, deletePrompt } from "@/lib/storage";
+import { ArrowLeft, Copy, Check, Trash2, ImageIcon, Calendar, Pencil, Pin } from "lucide-react";
+import { getPromptById, deletePrompt, togglePinPrompt } from "@/lib/storage";
 import { copyToClipboard, formatDate } from "@/lib/utils";
 import { Prompt } from "@/lib/types";
 import { ImageModal } from "@/components/image-modal";
@@ -18,6 +18,7 @@ export default function PromptDetailPage() {
     const [copied, setCopied] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [isPinning, setIsPinning] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [selectedImage, setSelectedImage] = useState<{ src: string, alt: string } | null>(null);
 
@@ -79,6 +80,21 @@ export default function PromptDetailPage() {
         }
     };
 
+    const handleTogglePin = async () => {
+        if (!prompt) return;
+
+        setIsPinning(true);
+        const success = await togglePinPrompt(prompt.id, !!prompt.isPinned);
+
+        if (success) {
+            setPrompt({ ...prompt, isPinned: !prompt.isPinned });
+            showToast(!prompt.isPinned ? "Prompt disematkan ke atas!" : "Sematkan dihapus");
+        } else {
+            showToast("Gagal mengubah status sematan");
+        }
+        setIsPinning(false);
+    };
+
     const handleEditSuccess = (updatedPrompt?: Prompt) => {
         if (updatedPrompt) {
             setPrompt(updatedPrompt);
@@ -125,6 +141,14 @@ export default function PromptDetailPage() {
                         <div className="flex items-center gap-2">
                             {!isEditing && (
                                 <>
+                                    <button
+                                        onClick={handleTogglePin}
+                                        disabled={isPinning}
+                                        className={`btn btn-secondary btn-icon ${prompt.isPinned ? 'text-[var(--primary)]' : ''}`}
+                                        title={prompt.isPinned ? "Lepas sematan" : "Sematkan ke atas"}
+                                    >
+                                        <Pin className={`w-4 h-4 ${prompt.isPinned ? 'fill-current' : ''}`} />
+                                    </button>
                                     <button
                                         onClick={() => setIsEditing(true)}
                                         className="btn btn-secondary gap-2"

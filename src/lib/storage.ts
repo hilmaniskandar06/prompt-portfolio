@@ -23,6 +23,7 @@ function docToPrompt(docSnapshot: any): Prompt {
         promptText: data.promptText || "",
         imageBefore: data.imageBefore || "",
         imageAfter: data.imageAfter || "",
+        isPinned: data.isPinned || false,
         createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
     };
 }
@@ -31,12 +32,30 @@ function docToPrompt(docSnapshot: any): Prompt {
 export async function getPrompts(): Promise<Prompt[]> {
     try {
         const promptsRef = collection(db, COLLECTION_NAME);
-        const q = query(promptsRef, orderBy("createdAt", "desc"));
+        // Note: Multiple orderBy might require a composite index in Firestore
+        const q = query(
+            promptsRef,
+            orderBy("isPinned", "desc"),
+            orderBy("createdAt", "desc")
+        );
         const snapshot = await getDocs(q);
         return snapshot.docs.map(docToPrompt);
     } catch (error) {
-        console.error("Error getting prompts:", error);
-        return [];
+        console.error("Error getting prompts (falling back to local sort):", error);
+        // Fallback: get all and sort locally if index is missing
+        try {
+            const promptsRef = collection(db, COLLECTION_NAME);
+            const snapshot = await getDocs(promptsRef);
+            const prompts = snapshot.docs.map(docToPrompt);
+            return prompts.sort((a, b) => {
+                if (a.isPinned && !b.isPinned) return -1;
+                if (!a.isPinned && b.isPinned) return 1;
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            });
+        } catch (innerError) {
+            console.error("Error getting prompts fallback:", innerError);
+            return [];
+        }
     }
 }
 
@@ -66,6 +85,7 @@ export async function addPrompt(data: NewPromptData): Promise<Prompt | null> {
             promptText: data.promptText,
             imageBefore: data.imageBefore,
             imageAfter: data.imageAfter,
+            isPinned: data.isPinned || false,
             createdAt: Timestamp.now(),
         };
 
@@ -74,6 +94,7 @@ export async function addPrompt(data: NewPromptData): Promise<Prompt | null> {
         return {
             id: docRef.id,
             ...data,
+            isPinned: newPromptDoc.isPinned,
             createdAt: new Date().toISOString(),
         };
     } catch (error) {
@@ -90,6 +111,20 @@ export async function updatePrompt(id: string, data: Partial<NewPromptData>): Pr
         return true;
     } catch (error) {
         console.error("Error updating prompt:", error);
+        return false;
+    }
+}
+
+// Toggle pin status
+export async function togglePinPrompt(id: string, currentStatus: boolean): Promise<boolean> {
+    try {
+        const docRef = doc(db, COLLECTION_NAME, id);
+        await updateDoc(docRef, {
+            isPinned: !currentStatus
+        });
+        return true;
+    } catch (error) {
+        console.error("Error toggling pin status:", error);
         return false;
     }
 }
